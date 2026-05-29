@@ -16,8 +16,30 @@ from database import (
     get_boardings_for_route,
 )
 
+import os, pickle
+from catboost import CatBoostRegressor
+
+def _load_models():
+    global RF_MODEL, CB_MODEL
+    base = os.path.dirname(__file__)
+    try:
+        with open(os.path.join(base,'rf_model.pkl'),'rb') as f:
+            RF_MODEL = pickle.load(f)
+        print('RF model loaded!')
+    except Exception as e:
+        print(f'RF load failed: {e}')
+        RF_MODEL = None
+    try:
+        CB_MODEL = CatBoostRegressor()
+        CB_MODEL.load_model(os.path.join(base,'catboost_model.cbm'))
+        print('CatBoost model loaded!')
+    except Exception as e:
+        print(f'CatBoost load failed: {e}')
+        CB_MODEL = None
+
 RF_MODEL = None
 CB_MODEL = None
+_load_models()
 
 app = FastAPI(title="SmartTransit Jordan API", version="2.0")
 app.add_middleware(
@@ -187,7 +209,11 @@ async def route_predictions(
 
         # classification (crowding)
         try:
-            features  = np.array([[load / 100.0, hour, meta["n_stops"], total_b]])
+            # Features: flow, occupancy, waitingTime, hour, passenger_count
+            flow_est = load * 0.8
+            occ_est  = load / 100.0
+            wait_est = max(0, meta["base_duration"] * (load/100))
+            features  = np.array([[flow_est, occ_est, wait_est, hour, total_b]])
             pred      = RF_MODEL.predict(features)[0]
             proba     = RF_MODEL.predict_proba(features)[0]
             crowding  = CROWDING_LABELS.get(int(pred), _crowding_from_load(load))
@@ -197,8 +223,12 @@ async def route_predictions(
 
         # regression (duration)
         try:
-            features2 = np.array([[load / 100.0, hour, meta["n_stops"], total_b]])
-            delay     = max(0, round(float(CB_MODEL.predict(features2)[0])))
+            flow_est2 = load * 0.8
+            occ_est2  = load / 100.0
+            wait_est2 = max(0, meta["base_duration"] * (load/100))
+            features2 = np.array([[flow_est2, occ_est2, wait_est2, hour, total_b]])
+            raw_tt    = float(CB_MODEL.predict(features2)[0])
+            delay     = max(0, round((raw_tt - meta["base_duration"]) / 60))
         except Exception:
             pass
 

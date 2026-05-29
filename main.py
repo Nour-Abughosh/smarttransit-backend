@@ -16,30 +16,8 @@ from database import (
     get_boardings_for_route,
 )
 
-import os, pickle
-from catboost import CatBoostRegressor
-
-def _load_models():
-    global RF_MODEL, CB_MODEL
-    base = os.path.dirname(__file__)
-    try:
-        with open(os.path.join(base,'rf_model.pkl'),'rb') as f:
-            RF_MODEL = pickle.load(f)
-        print('RF model loaded!')
-    except Exception as e:
-        print(f'RF load failed: {e}')
-        RF_MODEL = None
-    try:
-        CB_MODEL = CatBoostRegressor()
-        CB_MODEL.load_model(os.path.join(base,'catboost_model.cbm'))
-        print('CatBoost model loaded!')
-    except Exception as e:
-        print(f'CatBoost load failed: {e}')
-        CB_MODEL = None
-
 RF_MODEL = None
 CB_MODEL = None
-_load_models()
 
 app = FastAPI(title="SmartTransit Jordan API", version="2.0")
 app.add_middleware(

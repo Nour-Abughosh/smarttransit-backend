@@ -144,7 +144,7 @@ async def home_stats():
 
     active_buses = sum(1 for v in fleet if v["status"] == "active")
     avg_delay    = (sum(v["delay_minutes"] for v in fleet) / len(fleet)) if fleet else 0
-    on_time_pct  = round(sum(1 for v in fleet if v["delay_minutes"] <= 2) / len(fleet) * 100) if fleet else 0
+    on_time_pct  = round(sum(1 for v in fleet if v["delay_minutes"] < 5) / len(fleet) * 100) if fleet else 0
     avg_wait     = round(max(1.0, 6.2 - avg_delay * 0.3), 1)
     total_pass   = sum(r["total_boardings"] for r in routes)
 

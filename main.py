@@ -338,7 +338,7 @@ async def dashboard():
     active      = sum(1 for v in fleet if v["status"] == "active")
     delayed     = sum(1 for v in fleet if v["status"] == "delayed")
     maint       = sum(1 for v in fleet if v["status"] == "maintenance")
-    on_time     = sum(1 for v in fleet if v.get("delay_minutes", 0) < 3)
+    on_time     = sum(1 for v in fleet if v.get("delay_minutes", 0) < 5)
     on_time_pct = round(on_time / total * 100) if total else 0
     avg_load    = round(sum(v.get("load_pct", 0) for v in fleet) / total) if total else 0
     avg_delay   = round(sum(v.get("delay_minutes", 0) for v in fleet) / total, 1) if total else 0
